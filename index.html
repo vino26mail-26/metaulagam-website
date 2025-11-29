@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MetaUlagam</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <h1>MetaUlagam</h1>
+</header>
+
+<nav>
+    <a href="#">Home</a>
+    <a href="#">Course</a>
+    <a href="#">About</a>
+</nav>
+
+<section>
+
+   <div class="hero">
+        <h1>Learn VR, AI & 3D Printing with MetaUlagam</h1>
+        <p>The Future of Creative Technology Starts Here</p>
+   </div>
+<hr>
+
+    <h2>Why Choose MetaUlagam?</h2>
+    <ul class="features">
+        <li>Learn VR, AI, and 3D printing from scratch</li>
+        <li>Industry-based real projects</li>
+        <li>Step-by-step guidance</li>
+        <li>Online + Offline sessions</li>
+    </ul>
+
+    <h2>Welcome to MetaUlagam</h2>
+    <p>We offer Virtual Reality services.</p>
+
+    <img src="images/vr-film-making.jpg" style="max-width:100%;" alt="VR film making course poster">
+
+    <audio controls>
+        <source src="audio/background.mp3" type="audio/mpeg">
+        Your browser does not support the audio tag.
+    </audio>
+
+    <h2>Watch Our Intro Video</h2>
+    <video width="320" controls>
+        <source src="videos/intro.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <h2>Our Courses</h2>
+    <div class="course-container">
+        <div class="course-card">VR Film Making</div>
+        <div class="course-card">3D Printing Basics</div>
+        <div class="course-card">AI Filmmaking</div>
+    </div>
+
+    <h2>Course Details</h2>
+    <!-- Removed border="1" -->
+    <table>
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Duration</th>
+                <th>Fee</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>VR Film Making</td>
+                <td>3 Months</td>
+                <td>₹20,000</td>
+            </tr>
+            <tr>
+                <td>3D Printing Basics</td>
+                <td>1 Month</td>
+                <td>₹8,000</td>
+            </tr>
+            <tr>
+                <td>AI Filmmaking</td>
+                <td>2 Months</td>
+                <td>₹15,000</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <mark>Special Offer Available</mark><br>
+    <small>*Terms and conditions apply</small>
+	
+	<br><br><button id="toggleForm">Show/Hide Form</button>
+
+
+    <h2>Enquiry Form</h2>
+    <form>
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" placeholder="Enter your name">
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" placeholder="Enter your email">
+
+        <label for="course">Select Course:</label>
+        <select id="course">
+            <option>VR Film Making</option>
+            <option>3D Printing Basics</option>
+            <option>AI Filmmaking</option>
+        </select>
+
+        <label for="message">Message:</label>
+        <textarea id="message" rows="4" placeholder="Your message"></textarea>
+
+        <button type="submit">Submit</button>
+    </form>
+
+<h2>Live Greeting</h2>
+<input id="nameInput" placeholder="Enter your name" />
+<button id="greetBtn">Greet Me</button>
+
+<p id="greetMsg"></p>
+
+
+</section>
+
+<footer>
+    <p>Copyright 2025</p>
+</footer>
+
+<script src="script.js"></script>
+
+</body>
+</html>
