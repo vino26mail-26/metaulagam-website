@@ -1,0 +1,24 @@
+{
+  "name": "metaulagam_website",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vino26mail-26/metaulagam-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/vino26mail-26/metaulagam-website/issues"
+  },
+  "homepage": "https://github.com/vino26mail-26/metaulagam-website#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
