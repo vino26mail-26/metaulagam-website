@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/vino26mail-26/metaulagam-website#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mongoose": "^9.0.0"
   }
 }
