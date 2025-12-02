@@ -20,7 +20,7 @@
   "homepage": "https://github.com/vino26mail-26/metaulagam-website#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.21.1",
     "mongoose": "^8.3.4"
   },
