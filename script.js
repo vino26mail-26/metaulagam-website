@@ -1,95 +1,169 @@
-// ===============================
-// 1. LIVE GREETING FEATURE
-// ===============================
+// script.js
 
-const nameInput = document.getElementById("nameInput");
-const greetBtn = document.getElementById("greetBtn");
-const greetMsg = document.getElementById("greetMsg");
+document.addEventListener("DOMContentLoaded", () => {
+  const API_BASE = "http://localhost:3000";
 
-if (nameInput && greetBtn && greetMsg) {
-    greetBtn.addEventListener("click", function () {
-        const name = nameInput.value.trim();
+  // ====== DOM elements ======
+  const courseTableBody = document.getElementById("courseTableBody");
+  const courseSelect = document.getElementById("course");
 
-        if (name === "") {
-            greetMsg.innerText = "Please enter your name.";
-        } else {
-            greetMsg.innerText = `Hello ${name}, welcome to MetaUlagam!`;
-        }
-    });
-}
+  const enquiryForm = document.getElementById("enquiryForm");
+  const enquiryStatus = document.getElementById("enquiryStatus");
 
-// ===============================
-// 2. COURSE CARD CLICK + HIGHLIGHT
-// ===============================
+  const toggleFormBtn = document.getElementById("toggleForm");
 
-const cards = document.querySelectorAll(".course-card");
+  const greetBtn = document.getElementById("greetBtn");
+  const nameInputLive = document.getElementById("nameInput");
+  const greetMsg = document.getElementById("greetMsg");
 
-if (cards.length > 0) {
-    cards.forEach(function (card) {
-        card.addEventListener("click", function () {
-            // Toggle active class (highlight)
-            this.classList.toggle("active");
+  const courseCards = document.querySelectorAll(".course-card");
 
-            // Show which card was clicked
-            alert("You clicked: " + this.innerText);
+  // ==========================
+  // 1) Load courses from API
+  // ==========================
+  async function loadCoursesFromAPI() {
+    try {
+      const res = await fetch(`${API_BASE}/api/db/courses`);
+      const courses = await res.json();
+
+      // --- Fill table ---
+      courseTableBody.innerHTML = "";
+
+      courses.forEach((c) => {
+        const tr = document.createElement("tr");
+
+        const tdTitle = document.createElement("td");
+        tdTitle.textContent = c.title;
+
+        const tdDuration = document.createElement("td");
+        tdDuration.textContent = c.duration;
+
+        const tdFee = document.createElement("td");
+        tdFee.textContent = `₹${c.fee}`;
+
+        tr.appendChild(tdTitle);
+        tr.appendChild(tdDuration);
+        tr.appendChild(tdFee);
+
+        courseTableBody.appendChild(tr);
+      });
+
+      // --- Fill dropdown (Select Course) ---
+      courseSelect.innerHTML = `<option value="">-- Select a course --</option>`;
+
+      courses.forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c.title;        // or c._id if you prefer
+        opt.textContent = c.title;
+        courseSelect.appendChild(opt);
+      });
+    } catch (err) {
+      console.error("Error loading courses from API:", err);
+      // Optional: show something in the UI
+      courseTableBody.innerHTML =
+        "<tr><td colspan='3'>Failed to load courses</td></tr>";
+    }
+  }
+
+  // ==================================
+  // 2) Enquiry form -> POST /enquiries
+  // ==================================
+  if (enquiryForm) {
+    enquiryForm.addEventListener("submit", async (e) => {
+      e.preventDefault(); // stop page reload
+
+      enquiryStatus.textContent = "";
+
+      const nameField = document.getElementById("name");
+      const emailField = document.getElementById("email");
+      const courseField = document.getElementById("course");
+      const messageField = document.getElementById("message");
+
+      const payload = {
+        name: nameField.value.trim(),
+        email: emailField.value.trim(),
+        course: courseField.value,
+        message: messageField.value.trim(),
+      };
+
+      // Simple front-end validation
+      if (!payload.name || !payload.email || !payload.course) {
+        enquiryStatus.textContent =
+          "Please fill Name, Email and Course before submitting.";
+        enquiryStatus.style.color = "red";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/enquiries`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         });
-    });
-}
 
-// ===============================
-// 3. SHOW / HIDE ENQUIRY FORM (OPTIONAL)
-// ===============================
-// Make sure you have a button with id="toggleForm" in your HTML if you want this feature.
-
-const form = document.querySelector("form");
-const toggleBtn = document.getElementById("toggleForm");
-
-if (form && toggleBtn) {
-    toggleBtn.addEventListener("click", function () {
-        if (form.style.display === "none") {
-            form.style.display = "block";
-            toggleBtn.innerText = "Hide Enquiry Form";
-        } else {
-            form.style.display = "none";
-            toggleBtn.innerText = "Show Enquiry Form";
+        if (!res.ok) {
+          throw new Error("Server returned " + res.status);
         }
+
+        const saved = await res.json();
+        console.log("Enquiry saved:", saved);
+
+        enquiryStatus.textContent =
+          "✅ Thank you! Your enquiry has been submitted.";
+        enquiryStatus.style.color = "green";
+
+        enquiryForm.reset();
+      } catch (err) {
+        console.error("Error posting enquiry:", err);
+        enquiryStatus.textContent =
+          "❌ Something went wrong. Please try again.";
+        enquiryStatus.style.color = "red";
+      }
     });
-}
+  }
 
-// ===============================
-// 4. JAVASCRIPT / ES6 PRACTICE CODE
-//    (These just print to console – for learning)
-// ===============================
+  // ==========================
+  // 3) Toggle Show/Hide form
+  // ==========================
+  if (toggleFormBtn && enquiryForm) {
+    toggleFormBtn.addEventListener("click", () => {
+      if (enquiryForm.style.display === "none") {
+        enquiryForm.style.display = "flex";
+        toggleFormBtn.textContent = "Hide Form";
+      } else {
+        enquiryForm.style.display = "none";
+        toggleFormBtn.textContent = "Show Form";
+      }
+    });
+  }
 
-// Objects
-const course = {
-    title: "VR Film Making",
-    duration: "3 months",
-    fee: 20000
-};
+  // ==========================
+  // 4) Live Greeting feature
+  // ==========================
+  if (greetBtn && nameInputLive && greetMsg) {
+    greetBtn.addEventListener("click", () => {
+      const name = nameInputLive.value.trim();
 
-console.log("Course title:", course.title);
+      if (!name) {
+        greetMsg.textContent = "Please enter your name.";
+      } else {
+        greetMsg.textContent = `Hello ${name}, welcome to MetaUlagam!`;
+      }
+    });
+  }
 
-// JSON
-const data = {
-    tool: "VR",
-    level: "Beginner"
-};
+  // ==========================
+  // 5) Course card click alert
+  // ==========================
+  courseCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      const selectedCourse = card.textContent.trim();
+      alert(`You clicked on: ${selectedCourse}`);
+    });
+  });
 
-const jsonData = JSON.stringify(data);
-console.log("JSON data:", jsonData);
-
-// map()
-let amounts = [10, 20, 30];
-let doubled = amounts.map(n => n * 2);
-console.log("Doubled amounts:", doubled);
-
-// filter()
-let scores = [40, 80, 20, 90];
-let big = scores.filter(n => n >= 50);
-console.log("Scores >= 50:", big);
-
-// reduce()
-let bills = [100, 200, 50];
-let total = bills.reduce((a, b) => a + b);
-console.log("Total bills:", total);
+  // Initial load
+  loadCoursesFromAPI();
+});
