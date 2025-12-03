@@ -1,37 +1,35 @@
-// controllers/enquiryController.js
 const Enquiry = require("../models/Enquiry");
 
-async function createEnquiry(req, res) {
+exports.createEnquiry = async (req, res) => {
   try {
     const { name, email, course, message } = req.body;
 
-    // Basic validation
     if (!name || !email || !course || !message) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // 1) Save in MongoDB
-    const saved = await Enquiry.create({ name, email, course, message });
+    const enquiry = new Enquiry({ name, email, course, message });
+    const saved = await enquiry.save();   // write to Atlas
 
-    console.log("📩 New enquiry SAVED to DB:", saved);
+    console.log("📩 New enquiry saved:", saved);
 
-    // 2) Respond to frontend
-    return res.status(201).json({ message: "Enquiry received" });
+    // send back BOTH a message and the saved doc
+    res.status(201).json({
+      message: "Enquiry received",
+      enquiry: saved,
+    });
   } catch (err) {
     console.error("❌ Error saving enquiry:", err);
-    return res.status(500).json({ message: "Failed to save enquiry" });
+    res.status(500).json({ message: "Failed to save enquiry" });
   }
-}
+};
 
-// Optional: list all enquiries (for admin view)
-async function getEnquiries(req, res) {
+exports.getAllEnquiries = async (req, res) => {
   try {
-    const all = await Enquiry.find().sort({ createdAt: -1 });
-    return res.json(all);
+    const list = await Enquiry.find().sort({ createdAt: -1 });
+    res.json(list);
   } catch (err) {
     console.error("❌ Error fetching enquiries:", err);
-    return res.status(500).json({ message: "Failed to fetch enquiries" });
+    res.status(500).json({ message: "Failed to fetch enquiries" });
   }
-}
-
-module.exports = { createEnquiry, getEnquiries };
+};

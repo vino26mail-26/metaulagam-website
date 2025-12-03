@@ -1,16 +1,11 @@
-// routes/enquiryRoutes.js
 const express = require("express");
 const router = express.Router();
-
 const {
   createEnquiry,
-  getEnquiries,
+  getAllEnquiries,
 } = require("../controllers/enquiryController");
 
-// POST /api/enquiry  → save enquiry
 router.post("/", createEnquiry);
-
-// GET /api/enquiry   → list all (for admin tools)
-router.get("/", getEnquiries);
+router.get("/", getAllEnquiries);
 
 module.exports = router;
