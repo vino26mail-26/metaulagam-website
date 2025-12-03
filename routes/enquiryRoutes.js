@@ -1,25 +1,15 @@
 // routes/enquiryRoutes.js
 const express = require("express");
-const Enquiry = require("../models/enquiryModel");
-
 const router = express.Router();
+const {
+  createEnquiry,
+  getAllEnquiries,
+} = require("../controllers/enquiryController");
 
-// POST /api/enquiries  → save new enquiry
-router.post("/", async (req, res) => {
-  const { name, email, course, message } = req.body;
+// POST /api/enquiry
+router.post("/", createEnquiry);
 
-  if (!name || !email || !course) {
-    return res.status(400).json({ message: "Name, email and course are required" });
-  }
-
-  try {
-    const enquiry = new Enquiry({ name, email, course, message });
-    const saved = await enquiry.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    console.error("Error saving enquiry:", err);
-    res.status(500).json({ message: "Error saving enquiry" });
-  }
-});
+// GET /api/enquiry  (optional: admin view)
+router.get("/", getAllEnquiries);
 
 module.exports = router;

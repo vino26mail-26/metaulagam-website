@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const courseRoutes = require("./routes/courseRoutes");
+const enquiryRoutes = require("./routes/enquiryRoutes");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.post("/api/enquiry", (req, res) => {
 
 // IMPORTANT: THIS MUST BE CORRECT
 app.use("/api/db/courses", courseRoutes);
+app.use("/api/enquiry", enquiryRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
