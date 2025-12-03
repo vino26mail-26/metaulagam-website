@@ -1,35 +1,37 @@
+// controllers/enquiryController.js
 const Enquiry = require("../models/Enquiry");
 
+// POST /api/enquiry  → save enquiry to DB
 exports.createEnquiry = async (req, res) => {
   try {
+    console.log("📩 Enquiry POST body:", req.body);
+
     const { name, email, course, message } = req.body;
 
     if (!name || !email || !course || !message) {
-      return res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ error: "All fields are required" });
     }
 
     const enquiry = new Enquiry({ name, email, course, message });
-    const saved = await enquiry.save();   // write to Atlas
+    const saved = await enquiry.save();
 
-    console.log("📩 New enquiry saved:", saved);
+    console.log("✅ Enquiry saved:", saved);
 
-    // send back BOTH a message and the saved doc
-    res.status(201).json({
-      message: "Enquiry received",
-      enquiry: saved,
-    });
+    // ⬇⬇⬇ NO "message": "Enquiry received" here ⬇⬇⬇
+    return res.status(201).json(saved);
   } catch (err) {
     console.error("❌ Error saving enquiry:", err);
-    res.status(500).json({ message: "Failed to save enquiry" });
+    return res.status(500).json({ error: "Failed to save enquiry" });
   }
 };
 
+// GET /api/enquiry  → list all enquiries
 exports.getAllEnquiries = async (req, res) => {
   try {
     const list = await Enquiry.find().sort({ createdAt: -1 });
-    res.json(list);
+    return res.json(list);
   } catch (err) {
     console.error("❌ Error fetching enquiries:", err);
-    res.status(500).json({ message: "Failed to fetch enquiries" });
+    return res.status(500).json({ error: "Failed to fetch enquiries" });
   }
 };

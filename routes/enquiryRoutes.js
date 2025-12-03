@@ -1,3 +1,4 @@
+// routes/enquiryRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
@@ -5,6 +6,7 @@ const {
   getAllEnquiries,
 } = require("../controllers/enquiryController");
 
+// /api/enquiry
 router.post("/", createEnquiry);
 router.get("/", getAllEnquiries);
 
