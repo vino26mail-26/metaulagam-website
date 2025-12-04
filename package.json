@@ -19,9 +19,11 @@
   },
   "homepage": "https://github.com/vino26mail-26/metaulagam-website#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.3.4",
     "nodemailer": "^7.0.11"
   },
