@@ -1,8 +1,7 @@
-// login.js
+// login.js (Netlify / production)
 
-// ⚠️ Set this to your Render backend URL in production
-const API_BASE_URL = 'http://localhost:3000'; 
-// For Netlify live site, you'll change this to: 'https://your-backend.onrender.com'
+// Use Render backend
+const API_BASE_URL = 'https://metaulagam-backend.onrender.com';
 
 const form = document.getElementById('loginForm');
 const messageDiv = document.getElementById('message');
@@ -30,18 +29,17 @@ form.addEventListener('submit', async (e) => {
     const data = await res.json();
 
     if (!res.ok) {
-      // Show error from backend
       messageDiv.textContent = data.message || 'Login failed';
       loginBtn.disabled = false;
       loginBtn.textContent = 'Login';
       return;
     }
 
-    // Save token + user info in localStorage
+    // Save token + user in Netlify origin's localStorage
     localStorage.setItem('metaulagam_token', data.token);
     localStorage.setItem('metaulagam_user', JSON.stringify(data.user));
 
-    // Redirect to admin page
+    // Go to admin page
     window.location.href = 'admin.html';
   } catch (error) {
     console.error('Login error:', error);
