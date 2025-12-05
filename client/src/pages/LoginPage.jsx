@@ -1,89 +1,128 @@
+// src/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../config";
+import "./LoginPage.css";
+
+// ⬇⬇⬇ VERY IMPORTANT: backend URL, NOT 5173 ⬇⬇⬇
+const API_BASE_URL = "http://localhost:5000"; 
+// If your Node server logs a different port, change 5000 to that.
 
 function LoginPage() {
   const [email, setEmail] = useState("admin@example.com");
-  const [password, setPassword] = useState("password123");
-  const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
+  const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setMessage("");
+    setMsg({ type: "", text: "" });
     setLoading(true);
 
+    const url = `${API_BASE_URL}/api/auth/login`;
+    console.log("🔐 LOGIN URL =", url);
+
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      // For debugging: if backend accidentally returns HTML
+      const text = await res.text();
+      console.log("🔍 Raw login response:", text);
 
       if (!res.ok) {
-        setMessage(data.message || "Login failed");
-        setLoading(false);
+        setMsg({ type: "error", text: "Login failed" });
         return;
       }
 
-      localStorage.setItem("metaulagam_token", data.token);
-      localStorage.setItem("metaulagam_user", JSON.stringify(data.user));
+      // Try to parse JSON (after confirming it's not HTML)
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        setMsg({
+          type: "error",
+          text: "Server did not return JSON. Check API_BASE_URL.",
+        });
+        return;
+      }
 
-      navigate("/admin");
-    } catch (error) {
-      console.error("Login error:", error);
-      setMessage("Something went wrong.");
+      if (!data.token) {
+        setMsg({
+          type: "error",
+          text: "No token in response. Check backend /api/auth/login.",
+        });
+        return;
+      }
+
+      // ✅ Store token + user
+      localStorage.setItem("metaulagam_token", data.token);
+      if (data.user) {
+        localStorage.setItem("metaulagam_user", JSON.stringify(data.user));
+      }
+
+      setMsg({ type: "success", text: "Login successful!" });
+
+      navigate("/admin", { replace: true });
+    } catch (err) {
+      console.error("Login error:", err);
+      setMsg({ type: "error", text: "Something went wrong." });
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="flex justify-center items-center py-12">
-      <div className="w-full max-w-md bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-center">Admin Login</h2>
+    <div className="login-root">
+      <div className="login-card-wrap">
+        <div className="login-glow"></div>
 
-        {message && (
-          <p className="mb-3 text-sm text-red-600 text-center">{message}</p>
-        )}
+        <div className="login-card">
+          <h1>Admin Login</h1>
+          <p className="login-sub">
+            Enter your admin credentials to access your MetaUlagam dashboard.
+          </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
+          {msg.text && (
+            <p className={`login-msg ${msg.type === "error" ? "err" : "ok"}`}>
+              {msg.text}
+            </p>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
+          <form className="login-form" onSubmit={handleSubmit}>
+            <label>
+              <span>Email</span>
+              <input
+                type="email"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 rounded mt-2 disabled:opacity-60"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
+            <label>
+              <span>Password</span>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </button>
+          </form>
+
+          <p className="login-hint">
+            Use your admin email from the <code>users</code> collection.
+          </p>
+        </div>
       </div>
     </div>
   );

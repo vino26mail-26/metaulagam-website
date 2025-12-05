@@ -6,8 +6,10 @@ const {
   getAllEnquiries,
 } = require("../controllers/enquiryController");
 
-// /api/enquiry
+// POST /api/enquiries
 router.post("/", createEnquiry);
+
+// GET /api/enquiries
 router.get("/", getAllEnquiries);
 
 module.exports = router;

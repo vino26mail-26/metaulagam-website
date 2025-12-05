@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global styles */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #020617 100%);
+  color: #f9fafb;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ========================= */
+/* EXTRA POLISH FOR LANDING  */
+/* ========================= */
+
+/* Links: remove purple + underline defaults */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+/* Headings: consistent weight + spacing */
+h1,
+h2,
+h3 {
+  margin-top: 0;
+  font-weight: 700;
+}
+
+/* Section spacing (just in case) */
+section {
+  box-sizing: border-box;
+}
