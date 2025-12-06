@@ -5,6 +5,11 @@ import CoursesPage from "./pages/CoursesPage.jsx";
 import EnquiryPage from "./pages/EnquiryPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";   // ✅ correct file name
 import AdminPage from "./pages/AdminPage.jsx";   // ✅ correct file name
+import { useEffect } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import ChatWidget from "./components/ChatWidget.jsx";
+
 
 // Simple protected route wrapper
 function RequireAdmin({ children }) {
@@ -16,6 +21,14 @@ function RequireAdmin({ children }) {
 }
 
 function App() {
+  useEffect(() => {
+    AOS.init({
+      duration: 700,
+      easing: "ease-out",
+      once: true,
+      offset: 80,
+    });
+  }, []);
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -39,6 +52,8 @@ function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
+
+  
 }
 
 export default App;

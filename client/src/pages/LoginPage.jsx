@@ -1,128 +1,134 @@
 // src/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./LoginPage.css";
-
-// ⬇⬇⬇ VERY IMPORTANT: backend URL, NOT 5173 ⬇⬇⬇
-const API_BASE_URL = "http://localhost:5000"; 
-// If your Node server logs a different port, change 5000 to that.
+import { API_BASE_URL } from "../config";
+import "./LoginPage.css"; // ✅ NEW: CSS-based UI
 
 function LoginPage() {
   const [email, setEmail] = useState("admin@example.com");
   const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState({ type: "", text: "" });
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMsg({ type: "", text: "" });
+    setMessage("");
     setLoading(true);
 
-    const url = `${API_BASE_URL}/api/auth/login`;
-    console.log("🔐 LOGIN URL =", url);
-
     try {
-      const res = await fetch(url, {
+      console.log("📡 LOGIN POST:", `${API_BASE_URL}/api/auth/login`);
+
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      // For debugging: if backend accidentally returns HTML
       const text = await res.text();
-      console.log("🔍 Raw login response:", text);
+      console.log("🔍 RAW LOGIN RESPONSE:", text);
 
-      if (!res.ok) {
-        setMsg({ type: "error", text: "Login failed" });
-        return;
-      }
-
-      // Try to parse JSON (after confirming it's not HTML)
       let data;
       try {
         data = JSON.parse(text);
-      } catch (err) {
-        setMsg({
-          type: "error",
-          text: "Server did not return JSON. Check API_BASE_URL.",
-        });
+      } catch {
+        throw new Error("Invalid server response. Check backend URL.");
+      }
+
+      if (!res.ok) {
+        setMessage(data.message || "Login failed");
+        setLoading(false);
         return;
       }
 
       if (!data.token) {
-        setMsg({
-          type: "error",
-          text: "No token in response. Check backend /api/auth/login.",
-        });
-        return;
+        throw new Error("No token received from server.");
       }
 
-      // ✅ Store token + user
+      // ✅ STORE TOKEN FOR ADMIN
       localStorage.setItem("metaulagam_token", data.token);
-      if (data.user) {
-        localStorage.setItem("metaulagam_user", JSON.stringify(data.user));
-      }
+      localStorage.setItem("metaulagam_user", JSON.stringify(data.user || {}));
 
-      setMsg({ type: "success", text: "Login successful!" });
+      console.log("✅ Stored token:", data.token);
 
+      // Go to dashboard
       navigate("/admin", { replace: true });
-    } catch (err) {
-      console.error("Login error:", err);
-      setMsg({ type: "error", text: "Something went wrong." });
+    } catch (error) {
+      console.error("❌ Login error:", error);
+      setMessage(error.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="login-root">
-      <div className="login-card-wrap">
-        <div className="login-glow"></div>
+      {/* background glow */}
+      <div className="login-bg-glow" />
 
-        <div className="login-card">
-          <h1>Admin Login</h1>
-          <p className="login-sub">
-            Enter your admin credentials to access your MetaUlagam dashboard.
-          </p>
-
-          {msg.text && (
-            <p className={`login-msg ${msg.type === "error" ? "err" : "ok"}`}>
-              {msg.text}
-            </p>
-          )}
-
-          <form className="login-form" onSubmit={handleSubmit}>
-            <label>
-              <span>Email</span>
-              <input
-                type="email"
-                placeholder="admin@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
-
-            <label>
-              <span>Password</span>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-
-            <button type="submit" disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </button>
-          </form>
-
-          <p className="login-hint">
-            Use your admin email from the <code>users</code> collection.
-          </p>
+      <div className="login-card">
+        <div className="login-header">
+          <div className="login-logo">
+            <span>MU</span>
+          </div>
+          <div className="login-brand">
+            <p className="login-brand-title">MetaUlagam Academy</p>
+            <p className="login-brand-sub">Admin Console</p>
+          </div>
         </div>
+
+        <h2 className="login-title">Admin Login</h2>
+        <p className="login-subtitle">
+          Enter your admin credentials to access your MetaUlagam dashboard.
+        </p>
+
+        {message && (
+          <div className="login-message login-message-error">
+            {message}
+          </div>
+        )}
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label className="login-field">
+            <span className="login-label">Email</span>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@example.com"
+            />
+          </label>
+
+          <label className="login-field">
+            <span className="login-label">Password</span>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </label>
+
+          <button type="submit" disabled={loading} className="login-button">
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        <p className="login-hint">
+          Use your admin user from the <code>users</code> collection (role:{" "}
+          <span>admin</span>).
+        </p>
+
+        <button
+          type="button"
+          className="login-back"
+          onClick={() => navigate("/")}
+        >
+          ← Back to site
+        </button>
       </div>
     </div>
   );

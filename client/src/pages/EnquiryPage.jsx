@@ -1,158 +1,220 @@
 // src/pages/EnquiryPage.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 import "./EnquiryPage.css";
 
-// ⬇⬇⬇ CHANGE THIS TO YOUR BACKEND URL ⬇⬇⬇
-// If your backend runs locally on port 5000:
-const API_BASE_URL = "http://localhost:5000";
-// If your backend is on Render, use something like:
-// const API_BASE_URL = "https://your-backend-name.onrender.com";
-
 function EnquiryPage() {
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    course: "",
-    message: "",
-  });
+  const location = useLocation();
 
-  const [status, setStatus] = useState({ type: "", message: "" });
+  // Course coming from CoursesPage (if user clicked "Enquire for this course")
+  const selectedFromCourses =
+    location.state && location.state.selectedCourse
+      ? location.state.selectedCourse
+      : "";
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [course, setCourse] = useState(selectedFromCourses);
+  const [message, setMessage] = useState("");
+
+  const [status, setStatus] = useState(""); // success / error text
+  const [statusType, setStatusType] = useState("info"); // "success" | "error"
   const [loading, setLoading] = useState(false);
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  }
+  // If user navigates again from Courses with another course
+  useEffect(() => {
+    if (selectedFromCourses) {
+      setCourse(selectedFromCourses);
+    }
+  }, [selectedFromCourses]);
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus({ type: "", message: "" });
+    setStatus("");
+    setStatusType("info");
     setLoading(true);
 
-    const url = `${API_BASE_URL}/api/enquiries`;
-    console.log("📡 POST URL =", url);
-
     try {
+      const url = `${API_BASE_URL}/api/enquiries`;
+      console.log("📡 Enquiry POST URL =", url);
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ name, email, phone, course, message }),
       });
 
-      if (!res.ok) {
-        console.error("❌ Enquiry submit failed with status", res.status);
-        throw new Error("Failed");
+      const text = await res.text();
+      console.log("🔍 RAW ENQUIRY RESPONSE:", text);
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error("Invalid server response. Please try again later.");
       }
 
-      const data = await res.json();
-      console.log("✅ Enquiry saved:", data);
+      if (!res.ok) {
+        throw new Error(
+          data.error || data.message || "Failed to send enquiry."
+        );
+      }
 
-      setStatus({
-        type: "success",
-        message: "Thank you! Your enquiry has been received.",
-      });
-
-      setForm({
-        name: "",
-        phone: "",
-        email: "",
-        course: "",
-        message: "",
-      });
+      // ✅ success
+      setStatusType("success");
+      setStatus("Thank you! Your enquiry has been submitted.");
+      setName("");
+      setPhone("");
+      setEmail("");
+      // keep course so they remember what they chose
+      setMessage("");
     } catch (err) {
-      console.error("❌ Error in handleSubmit:", err);
-      setStatus({
-        type: "error",
-        message: "Something went wrong. Please try again.",
-      });
+      console.error("❌ Enquiry error:", err);
+      setStatusType("error");
+      setStatus(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="enquiry-root">
-      <div className="enquiry-card-wrap">
-        <div className="enquiry-glow" />
-        <div className="enquiry-card">
-          <h1>Enquiry Form</h1>
-          <p className="enquiry-sub">
-            Tell us what you want to learn or build. We&apos;ll reply with
-            course suggestions and next steps.
-          </p>
-
-          <form onSubmit={handleSubmit} className="enquiry-form">
-            <div className="enquiry-row">
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Full Name"
-                required
-              />
-              <input
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="Phone / WhatsApp"
-              />
-            </div>
-
-            <input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Email Address"
-              required
-            />
-
-            <select
-              name="course"
-              value={form.course}
-              onChange={handleChange}
-            >
-              <option value="">Select a course (optional)</option>
-              <option value="VR Film Making">VR Film Making</option>
-              <option value="3D Printing Basics">3D Printing Basics</option>
-              <option value="AI Filmmaking">AI Filmmaking</option>
-              <option value="Digital Film Making">Digital Film Making</option>
-              <option value="MERN Stack">MERN Stack</option>
-              <option value="Not sure yet">Not sure yet</option>
-            </select>
-
-            <textarea
-              name="message"
-              rows={4}
-              value={form.message}
-              onChange={handleChange}
-              placeholder="Tell us your goals, current skills, or questions..."
-              required
-            />
-
-            {status.message && (
-              <div
-                className={
-                  status.type === "success"
-                    ? "enquiry-status success"
-                    : "enquiry-status error"
-                }
-              >
-                {status.message}
-              </div>
-            )}
-
-            <button type="submit" disabled={loading}>
-              {loading ? "Sending..." : "Submit Enquiry"}
-            </button>
-
-            <p className="enquiry-foot">
-              We respect your time and privacy. No spam – only course guidance.
-            </p>
-          </form>
+    <div className="enquiry-page">
+      {/* TOP NAV – same family as Courses/Admin */}
+      <header className="enquiry-nav">
+        <div className="enquiry-nav-inner">
+          <span className="enquiry-brand">MetaUlagam Academy</span>
+          <nav className="enquiry-nav-links">
+            <Link to="/">Home</Link>
+            <Link to="/courses">Courses</Link>
+            <Link to="/enquiry" className="active-link">
+              Enquiry
+            </Link>
+            <Link to="/admin-login">Admin</Link>
+          </nav>
         </div>
-      </div>
+      </header>
+
+      {/* MAIN CONTENT */}
+      <main className="enquiry-content">
+        <section className="enquiry-layout">
+          {/* LEFT: TEXT / INFO */}
+          <div className="enquiry-info">
+            <p className="enquiry-kicker">ENQUIRY</p>
+            <h1>Tell us what you want to build</h1>
+            <p className="enquiry-sub">
+              Whether it&apos;s VR film making, AI tools, 3D printing or a full
+              film course – share your details and I&apos;ll reply personally
+              with batches, fees and the best path for you.
+            </p>
+
+            <ul className="enquiry-bullets">
+              <li>1:1 call after your enquiry (no spam).</li>
+              <li>Guidance on which course fits your goal.</li>
+              <li>Project-based learning – not boring theory.</li>
+            </ul>
+
+            <div className="enquiry-note">
+              <span className="note-dot" />
+              All messages come directly to the mentor, not a sales team.
+            </div>
+          </div>
+
+          {/* RIGHT: FORM CARD */}
+          <div className="enquiry-card-wrap">
+            <div className="enquiry-card-glow" />
+            <div className="enquiry-card">
+              <h2>Enquiry Form</h2>
+              <p className="enquiry-card-sub">
+                Fill this form and I&apos;ll get back with schedule & next
+                steps.
+              </p>
+
+              {status && (
+                <div
+                  className={`enquiry-status enquiry-status-${statusType}`}
+                >
+                  {status}
+                </div>
+              )}
+
+              <form className="enquiry-form" onSubmit={handleSubmit}>
+                {/* Name */}
+                <label className="enquiry-field">
+                  <span>Name</span>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </label>
+
+                {/* Phone */}
+                <label className="enquiry-field">
+                  <span>Phone</span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Optional, but helps for WhatsApp follow-up"
+                  />
+                </label>
+
+                {/* Email */}
+                <label className="enquiry-field">
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </label>
+
+                {/* Course */}
+                <label className="enquiry-field">
+                  <span>Course</span>
+                  <input
+                    type="text"
+                    required
+                    value={course}
+                    onChange={(e) => setCourse(e.target.value)}
+                    placeholder="VR Film Making, 3D Printing Basics, AI Film Making..."
+                  />
+                  {selectedFromCourses && (
+                    <p className="enquiry-help">
+                      Selected from courses page:{" "}
+                      <strong>{selectedFromCourses}</strong>
+                    </p>
+                  )}
+                </label>
+
+                {/* Message */}
+                <label className="enquiry-field">
+                  <span>Message</span>
+                  <textarea
+                    rows={4}
+                    required
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Tell me about your goal. Example: I am a VisCom student, I want a portfolio for film/VR..."
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="enquiry-submit"
+                >
+                  {loading ? "Sending..." : "Send Enquiry"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

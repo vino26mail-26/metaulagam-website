@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import "./LandingPage.css";
+import heroImage from "../assets/hero-vr.jpg";
+
 
 function LandingPage() {
   return (
@@ -19,7 +21,11 @@ function LandingPage() {
             <Link to="/">Home</Link>
             <Link to="/courses">Courses</Link>
             <Link to="/enquiry">Enquiry</Link>
-            <Link to="/admin">Admin</Link>
+
+            {/* ⭐ FIXED — THIS SHOULD GO TO ADMIN LOGIN, NOT /admin */}
+            <Link to="/admin-login" className="nav-admin-btn">
+              Admin Login
+            </Link>
           </nav>
         </div>
       </header>
@@ -32,8 +38,7 @@ function LandingPage() {
             <p className="hero-kicker">METAULAGAM ACADEMY</p>
 
             <h1 className="hero-title">
-              Learn VR, Film Making &amp; AI{" "}
-              <span>by building real products</span>
+              Learn VR, Film Making &amp; AI <span>by building real products</span>
             </h1>
 
             <p className="hero-description">
@@ -66,13 +71,12 @@ function LandingPage() {
               </p>
 
               <div className="hero-image">
-                {/* You can later replace this with a real image */}
-                <p>
-                  Hero image / VR still goes here.
-                  <br />
-                  For now this is a placeholder box, but your layout is working.
-                </p>
-              </div>
+  <img
+    src={heroImage}
+    alt="Kalapathy / VR preview"
+    className="hero-image-img"
+  />
+</div>
 
               <div className="hero-status-row">
                 <span>Full-Stack App Status</span>

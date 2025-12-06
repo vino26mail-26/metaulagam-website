@@ -1,24 +1,33 @@
-import { useEffect, useState } from "react";
-import "./AdminPage.css";
+// src/pages/AdminPage.jsx
+import { useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "../config";
+import "./AdminPage.css";
 
 function AdminPage() {
   const [enquiries, setEnquiries] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
+  const [courseFilter, setCourseFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [selectedId, setSelectedId] = useState(null);
 
-  // Correct token key used across your app
   const token = localStorage.getItem("metaulagam_token");
+  const user = JSON.parse(localStorage.getItem("metaulagam_user") || "{}");
 
+  // ---- Logout handler ----
+  const handleLogout = () => {
+    localStorage.removeItem("metaulagam_token");
+    localStorage.removeItem("metaulagam_user");
+    window.location.href = "/admin-login";
+  };
+
+  // ---- Load enquiries from backend ----
   useEffect(() => {
     async function fetchEnquiries() {
       try {
         setLoading(true);
         setError("");
-
-        console.log("📡 Calling backend:", `${API_BASE_URL}/api/admin/enquiries`);
 
         const res = await fetch(`${API_BASE_URL}/api/admin/enquiries`, {
           headers: {
@@ -27,7 +36,6 @@ function AdminPage() {
           },
         });
 
-        // handle API errors
         if (!res.ok) {
           if (res.status === 401) {
             throw new Error("Not authenticated. Please login as admin.");
@@ -35,23 +43,41 @@ function AdminPage() {
           throw new Error("Failed to load enquiries.");
         }
 
-        // ✅ CORRECT — parse JSON directly (no more html/parse errors)
-        const data = await res.json();
-        console.log("🔍 JSON Response:", data);
+        async function handleDelete() {
+  if (!selectedId) return;
 
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/admin/enquiries/${selectedId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Delete failed");
+
+    setEnquiries((prev) => prev.filter((item) => item._id !== selectedId));
+    setFiltered((prev) => prev.filter((item) => item._id !== selectedId));
+
+    setShowDeleteModal(false);
+    setSelectedId(null);
+  } catch (err) {
+    console.error("Delete error:", err);
+    alert("Failed to delete enquiry");
+  }
+}
+
+
+        const data = await res.json();
         const list = data.enquiries || data || [];
         setEnquiries(list);
-        setFiltered(list);
-
       } catch (err) {
-        console.error("❌ Error fetching enquiries:", err);
-        setError(err.message);
+        setError(err.message || "Error loading enquiries");
       } finally {
         setLoading(false);
       }
     }
 
-    // only fetch if logged in
     if (token) {
       fetchEnquiries();
     } else {
@@ -60,124 +86,236 @@ function AdminPage() {
     }
   }, [token]);
 
+  // ---- Unique course list for dropdown ----
+  const courseOptions = useMemo(() => {
+    const set = new Set();
+    enquiries.forEach((e) => {
+      if (e.course) set.add(e.course);
+    });
+    return ["All", ...Array.from(set)];
+  }, [enquiries]);
 
-  // 🔍 filtering search results
-  useEffect(() => {
-    const q = search.toLowerCase();
+  // ---- Stats (SaaS-style cards) ----
+  const stats = useMemo(() => {
+    const total = enquiries.length;
 
-    const results = enquiries.filter((e) => {
+    const today = new Date();
+    const todayCount = enquiries.filter((e) => {
+      if (!e.createdAt) return false;
+      const d = new Date(e.createdAt);
       return (
+        d.getFullYear() === today.getFullYear() &&
+        d.getMonth() === today.getMonth() &&
+        d.getDate() === today.getDate()
+      );
+    }).length;
+
+    const uniqueEmails = new Set(
+      enquiries.map((e) => (e.email || "").toLowerCase())
+    );
+    const uniqueStudents = uniqueEmails.has("") ? uniqueEmails.size - 1 : uniqueEmails.size;
+
+    const vrRelated = enquiries.filter((e) =>
+      (e.course || "").toLowerCase().includes("vr")
+    ).length;
+
+    return { total, todayCount, uniqueStudents, vrRelated };
+  }, [enquiries]);
+
+  // ---- Filtered enquiries based on search + course ----
+  const visibleEnquiries = useMemo(() => {
+    const q = search.toLowerCase();
+    return enquiries.filter((e) => {
+      const matchesSearch =
         (e.name && e.name.toLowerCase().includes(q)) ||
         (e.email && e.email.toLowerCase().includes(q)) ||
-        (e.phone && e.phone.toLowerCase().includes(q)) ||
-        (e.course && e.course.toLowerCase().includes(q))
-      );
+        (e.phone && String(e.phone).toLowerCase().includes(q)) ||
+        (e.course && e.course.toLowerCase().includes(q)) ||
+        (e.message && e.message.toLowerCase().includes(q));
+
+      const matchesCourse =
+        courseFilter === "All" || e.course === courseFilter;
+
+      return matchesSearch && matchesCourse;
     });
-
-    setFiltered(results);
-  }, [search, enquiries]);
-
+  }, [enquiries, search, courseFilter]);
 
   return (
-    <div className="admin-root">
-      <div className="admin-inner">
+    <div className="admin-page">
+      {/* NAVBAR */}
+      <nav className="admin-nav">
+        <div className="admin-nav-left">
+          <span className="admin-brand">MetaUlagam Admin</span>
+          <a href="/admin" className="admin-nav-link">
+            Dashboard
+          </a>
+          <a href="/courses" className="admin-nav-link">
+            Courses
+          </a>
+        </div>
 
+        <div className="admin-nav-right">
+          <span className="admin-user">👤 {user.name || "Admin User"}</span>
+          <button className="admin-logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </nav>
+
+      {/* MAIN CONTENT */}
+      <main className="admin-content">
         {/* HEADER */}
         <header className="admin-header">
           <div>
-            <p className="admin-kicker">ADMIN</p>
             <h1>Enquiries Dashboard</h1>
             <p className="admin-sub">
-              Manage and review all student enquiries submitted on MetaUlagam.
+              Track and manage all student enquiries submitted on your website.
             </p>
-          </div>
-
-          <div className="admin-pill">
-            Total enquiries: <span>{enquiries.length}</span>
           </div>
         </header>
 
-        {/* PANEL */}
-        <section className="admin-panel-wrap">
-          <div className="admin-panel-glow" />
-          <div className="admin-panel">
-
-            {/* Search box */}
-            <div className="admin-search-row">
-              <input
-                type="text"
-                placeholder="Search by name, email, phone, or course..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-
-            <div className="admin-table-wrap">
-              {loading ? (
-                <div className="admin-state">Loading enquiries...</div>
-              ) : error ? (
-                <div className="admin-state admin-error">{error}</div>
-              ) : filtered.length === 0 ? (
-                <div className="admin-state">No enquiries found.</div>
-              ) : (
-                <div className="admin-table-scroll">
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Contact</th>
-                        <th>Course</th>
-                        <th>Message</th>
-                        <th>Created</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {filtered.map((e) => (
-                        <tr key={e._id}>
-                          <td>
-                            <div className="admin-name">
-                              <span className="admin-name-main">
-                                {e.name || "-"}
-                              </span>
-                              {e.email && (
-                                <span className="admin-name-sub">
-                                  {e.email}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="admin-contact">{e.phone || "—"}</td>
-
-                          <td>
-                            <span className="admin-course-pill">
-                              {e.course || "Not specified"}
-                            </span>
-                          </td>
-
-                          <td className="admin-message">
-                            {e.message || "—"}
-                          </td>
-
-                          <td className="admin-date">
-                            {e.createdAt
-                              ? new Date(e.createdAt).toLocaleString()
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
+        {/* STATS ROW */}
+        <section className="admin-stats">
+          <div className="admin-stat-card">
+            <p className="admin-stat-label">Total Enquiries</p>
+            <p className="admin-stat-value">{stats.total}</p>
+          </div>
+          <div className="admin-stat-card">
+            <p className="admin-stat-label">Today</p>
+            <p className="admin-stat-value">{stats.todayCount}</p>
+          </div>
+          <div className="admin-stat-card">
+            <p className="admin-stat-label">Unique Students</p>
+            <p className="admin-stat-value">{stats.uniqueStudents}</p>
+          </div>
+          <div className="admin-stat-card">
+            <p className="admin-stat-label">VR-related</p>
+            <p className="admin-stat-value">{stats.vrRelated}</p>
           </div>
         </section>
-      </div>
+
+        {/* FILTER BAR */}
+        <section className="admin-filters">
+          <div className="admin-search">
+            <input
+              type="text"
+              placeholder="Search by name, email, phone, course, or message..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="admin-filter-right">
+            <label className="admin-filter-label">
+              Course
+              <select
+                value={courseFilter}
+                onChange={(e) => setCourseFilter(e.target.value)}
+              >
+                {courseOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="admin-count-pill">
+              Total: <span>{enquiries.length}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ERROR / TABLE */}
+        {error && <div className="admin-error">{error}</div>}
+
+        <section className="admin-table-container">
+          {loading ? (
+            <div className="admin-loading">Loading enquiries...</div>
+          ) : !error && visibleEnquiries.length === 0 ? (
+            <div className="admin-empty">
+              No enquiries match your filters yet.
+            </div>
+          ) : (
+            <div className="admin-table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Course</th>
+                    <th>Message</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleEnquiries.map((e) => (
+                    <tr key={e._id}>
+                      <td>
+                        <div className="admin-name-block">
+                          <span className="admin-name">
+                            {e.name || "Unknown"}
+                          </span>
+                          {e.email && (
+                            <span className="admin-email">{e.email}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{e.phone || "—"}</td>
+                      <td>
+                        <span className="admin-course">
+                          {e.course || "Not specified"}
+                        </span>
+                      </td>
+                      <td className="admin-msg" title={e.message || ""}>
+                        {e.message || "—"}
+                      </td>
+                      <td>
+                        {e.createdAt
+                          ? new Date(e.createdAt).toLocaleString()
+                          : "—"}
+                      </td>
+                      <td>
+  <button
+    className="delete-btn"
+    onClick={() => {
+      setSelectedId(e._id);
+      setShowDeleteModal(true);
+    }}
+  >
+    Delete
+  </button>
+</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </main>
     </div>
   );
+
+  {showDeleteModal && (
+  <div className="modal-overlay">
+    <div className="modal-card">
+      <h3>Delete Enquiry?</h3>
+      <p>This action cannot be undone.</p>
+
+      <div className="modal-actions">
+        <button className="modal-cancel" onClick={() => setShowDeleteModal(false)}>
+          Cancel
+        </button>
+
+        <button className="modal-delete" onClick={handleDelete}>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 }
 
 export default AdminPage;
